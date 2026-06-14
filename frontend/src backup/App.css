@@ -1,0 +1,194 @@
+/* Professional UI for Kigali Spatial Suitability */
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f7f9fb 0%, #ffffff 100%);
+}
+
+/* Top navigation */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background-color: #0f1724;
+  color: #ffffff;
+  padding: 14px 24px;
+  box-shadow: 0 3px 18px rgba(12, 18, 28, 0.18);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand .logo {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #2b6cb0 0%, #4fd1c5 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: rgba(255,255,255,0.95);
+  box-shadow: 0 4px 14px rgba(35, 75, 120, 0.25);
+}
+
+.brand .title {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.brand .subtitle {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.72);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.nav-links a {
+  color: rgba(255,255,255,0.88);
+  text-decoration: none;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.nav-links a:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-actions .btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: rgba(255,255,255,0.9);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.header-actions .btn.primary {
+  background: linear-gradient(90deg, #2b6cb0, #4fd1c5);
+  border: none;
+  color: #07203a;
+}
+
+/* Main layout */
+.main-content {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px 18px 16px;
+  flex: 1;
+}
+
+.map-wrapper {
+  position: relative;
+  flex: 1;
+  min-height: calc(100vh - 140px);
+  background: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(28, 45, 62, 0.06);
+}
+
+.top-controls {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  align-items: center;
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 6px 18px rgba(28,45,62,0.06);
+  z-index: 900;
+}
+
+.top-controls label {
+  font-weight: 600;
+  color: #344054;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.top-controls select, .top-controls input[type="text"] {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e6eef6;
+  font-size: 0.95rem;
+}
+
+.map-section {
+  height: 100%;
+  width: 100%;
+}
+
+.result-overlay {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1000;
+  max-width: 420px;
+}
+
+/* Right column: result panel already styled; keep width and spacing consistent */
+
+/* Responsive adjustments */
+@media (max-width: 1000px) {
+  .main-content {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+  .result-panel {
+    width: 100% !important;
+    position: relative;
+    max-height: 40vh;
+    border-left: none;
+    border-top: 1px solid #eef2f6;
+  }
+}
+
+/* Small footer */
+.app-footer {
+  padding: 10px 18px;
+  font-size: 0.9rem;
+  color: #6b7280;
+  text-align: center;
+  border-top: 1px solid #eef2f6;
+}
+
+/* Reusable page card for content pages */
+.page-card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(15,23,42,0.04);
+  margin: 16px 0;
+}
+
+.page-hero {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.muted {
+  color: #475569;
+}

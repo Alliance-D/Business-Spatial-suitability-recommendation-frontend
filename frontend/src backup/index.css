@@ -1,0 +1,96 @@
+:root {
+  --primary-dark: #1a1a2e;
+  --primary-blue: #5b8db8;
+  --accent-orange: #f0a500;
+  --success-green: #4a9e6b;
+  --danger-red: #e05c5c;
+  --light-bg: #f5f5f5;
+  --pale-amber: #fff8e1;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--light-bg);
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.navbar {
+  background-color: var(--primary-dark);
+  color: white;
+  padding: 20px 30px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.navbar h1 {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+.navbar p {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.map-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.control-bar {
+  background-color: white;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.control-bar label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+}
+
+.control-bar select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.map-container {
+  flex: 1;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    flex-direction: column;
+  }
+
+  .map-section {
+    min-height: 50%;
+  }
+}

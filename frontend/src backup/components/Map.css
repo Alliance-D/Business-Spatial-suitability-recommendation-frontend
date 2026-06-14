@@ -1,0 +1,23 @@
+.map-container {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+
+.loading-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  font-weight: 600;
+  z-index: 1000;
+}
+
+:global(.leaflet-container) {
+  height: 100%;
+  width: 100%;
+}

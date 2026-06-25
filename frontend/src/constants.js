@@ -16,19 +16,21 @@ const API_TIMEOUT_MS = Number(
 
 const ENDPOINTS = {
   // Public
-  ASSESS:               `${API_BASE_URL}/api/v1/query`,
-  HEALTH:               `${API_BASE_URL}/api/v1/health`,
-  SCHEMA:               `${API_BASE_URL}/api/v1/schema`,
-  NEARBY_COMPETITORS:   `${API_BASE_URL}/api/v1/nearby/competitors`,
+  ASSESS:             `${API_BASE_URL}/api/v1/assess`,        // was /api/v1/query — fixed
+  HEALTH:             `${API_BASE_URL}/api/v1/health`,
+  SCHEMA:             `${API_BASE_URL}/api/v1/schema`,
+  NEARBY_COMPETITORS: `${API_BASE_URL}/api/v1/nearby/competitors`,
 
   // Admin — authenticated
-  ADMIN_LOGIN:          `${API_BASE_URL}/api/v1/admin/login`,
-  ADMIN_DB_STATUS:      `${API_BASE_URL}/api/v1/admin/db/status`,
-  ADMIN_BULK_OBS:       `${API_BASE_URL}/api/v1/admin/observations/bulk`,
-  ADMIN_SINGLE_OBS:     `${API_BASE_URL}/api/v1/admin/observations/single`,
-  ADMIN_RECENT_PREDS:   `${API_BASE_URL}/api/v1/admin/predictions/recent`,
-  ADMIN_RETRAIN:        `${API_BASE_URL}/api/v1/admin/model/retrain`,
-  ADMIN_MODEL_METRICS:  `${API_BASE_URL}/api/v1/admin/model/metrics`,
+  ADMIN_LOGIN:        `${API_BASE_URL}/api/v1/admin/login`,
+  ADMIN_DB_STATUS:    `${API_BASE_URL}/api/v1/admin/db/status`,
+  ADMIN_BULK_OBS:     `${API_BASE_URL}/api/v1/admin/observations/bulk`,
+  ADMIN_SINGLE_OBS:   `${API_BASE_URL}/api/v1/admin/observations/single`,
+  ADMIN_RECOMPUTE:    `${API_BASE_URL}/api/v1/admin/observations/recompute-spatial`,
+  ADMIN_RECENT_PREDS: `${API_BASE_URL}/api/v1/admin/predictions/recent`,
+  ADMIN_RETRAIN:      `${API_BASE_URL}/api/v1/admin/model/retrain`,
+  ADMIN_RETRAIN_STATUS:`${API_BASE_URL}/api/v1/admin/model/retrain/status`,
+  ADMIN_MODEL_METRICS:`${API_BASE_URL}/api/v1/admin/model/metrics`,
 }
 
 export { API_BASE_URL, API_TIMEOUT_MS, ENDPOINTS }

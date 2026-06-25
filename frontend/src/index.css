@@ -12,7 +12,7 @@
   /* Text */
   --text-primary:   #0F1724;
   --text-secondary: #4B5563;
-  --text-muted:     #8B95A3;
+  --text-muted:     #646E7C;  /* WCAG AA fix: was #8B95A3 (3.0:1), now 5.2:1 */
 
   /* Brand */
   --brand:        #1B4F82;
@@ -20,11 +20,11 @@
   --brand-dim:    rgba(27, 79, 130, 0.08);
 
   /* Semantic */
-  --green:        #16A34A;
+  --green:        #0F7637;  /* WCAG AA fix: was #16A34A (3.3:1 on white), now 5.7:1 */
   --green-dim:    #DCFCE7;
-  --amber:        #B45309;
+  --amber:        #92400E;  /* WCAG AA fix: was #B45309 (5.0:1), now 7.1:1 */
   --amber-dim:    #FEF3C7;
-  --red:          #DC2626;
+  --red:          #B91C1C;  /* WCAG AA fix: was #DC2626 (4.8:1 on white, 3.9 on red-dim), now 6.5:1/5.3:1 */
   --red-dim:      #FEE2E2;
 
   /* Elevation */
@@ -54,7 +54,7 @@
   --border-2:     #2A3D58;
   --text-primary:   #E8EDF5;
   --text-secondary: #8B9AB0;
-  --text-muted:     #4A5A72;
+  --text-muted:     #788CA8;  /* WCAG AA fix: was #4A5A72 (2.5:1), now 5.1:1 */
   --brand:        #3B8FD4;
   --brand-light:  #5BA5E5;
   --brand-dim:    rgba(59,143,212,0.12);

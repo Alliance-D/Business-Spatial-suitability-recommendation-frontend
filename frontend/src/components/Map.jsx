@@ -19,6 +19,14 @@ const pinIcon = L.divIcon({
   iconAnchor: [16, 40],
 })
 
+/* Small dot icon for competitor markers */
+const competitorIcon = (isPositive) => L.divIcon({
+  className: 'competitor-marker-wrap',
+  html: `<div class="competitor-marker" style="background:${isPositive ? 'var(--green)' : 'var(--red)'}"></div>`,
+  iconSize: [10, 10],
+  iconAnchor: [5, 5],
+})
+
 function PinDropHandler({ onPinDrop }) {
   useMapEvents({
     click(e) {
@@ -38,29 +46,19 @@ function MapRecenter({ center }) {
 }
 
 /**
- * Generates illustrative nearby-business markers around the pin.
- * In production this is replaced by the /api/v1/nearby/competitors
- * response, clustered with leaflet.markercluster.
+ * Map component.
+ *
+ * Props:
+ *   pinPosition     — { lat, lng } of the dropped pin, or null
+ *   onPinPlaced     — called with { lat, lng } when user clicks the map
+ *   radiusMeters    — analysis radius for the buffer circle
+ *   layers          — { showBuffer, showCompetitors }
+ *   center          — [lat, lng] to fly to (from search)
+ *   nearbyMarkers   — array of { id, latitude, longitude, reference_label }
+ *                     from /api/v1/nearby/competitors — real backend data.
+ *                     App.jsx fetches these and passes them down.
  */
-function generateNearbyMarkers(lat, lng, radius) {
-  const markers = []
-  const offsets = [0.2, -0.15, 0.4, -0.35, 0.6, -0.5]
-  for (let i = 0; i < offsets.length; i++) {
-    const angle = (i * 60) * (Math.PI / 180)
-    const r = (radius * (0.35 + (i % 3) * 0.18)) / 111320
-    const dLat = r * Math.cos(angle)
-    const dLng = r * Math.sin(angle) / Math.cos(lat * Math.PI / 180)
-    markers.push({ lat: lat + dLat, lng: lng + dLng })
-  }
-  return markers
-}
-
-export default function Map({ pinPosition, onPinPlaced, radiusMeters = 500, layers = {}, center }) {
-  const nearby = useMemo(
-    () => pinPosition ? generateNearbyMarkers(pinPosition.lat, pinPosition.lng, Number(radiusMeters)) : [],
-    [pinPosition, radiusMeters]
-  )
-
+export default function Map({ pinPosition, onPinPlaced, radiusMeters = 500, layers = {}, center, nearbyMarkers = [] }) {
   return (
     <MapContainer
       className="map-leaflet-container"
@@ -88,13 +86,13 @@ export default function Map({ pinPosition, onPinPlaced, radiusMeters = 500, laye
             />
           )}
 
-          {layers.showCompetitors && (
+          {layers.showCompetitors && nearbyMarkers.length > 0 && (
             <LayerGroup>
-              {nearby.map((m, i) => (
+              {nearbyMarkers.map((m) => (
                 <Marker
-                  key={`nearby-${i}`}
-                  position={[m.lat, m.lng]}
-                  icon={L.divIcon({ className: 'competitor-marker-wrap', html: '<div class="competitor-marker"></div>', iconSize: [10, 10] })}
+                  key={`nearby-${m.id}`}
+                  position={[m.latitude, m.longitude]}
+                  icon={competitorIcon(m.reference_label)}
                 />
               ))}
             </LayerGroup>

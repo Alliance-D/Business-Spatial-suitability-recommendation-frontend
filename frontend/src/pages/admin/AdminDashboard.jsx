@@ -55,21 +55,24 @@ const Icon = {
 }
 
 const NAV_ITEMS = [
-  { key: 'overview',   label: 'Overview',         icon: Icon.grid },
-  { key: 'import',     label: 'Import Data',      icon: Icon.upload },
-  { key: 'predictions',label: 'Prediction Log',   icon: Icon.list },
-  { key: 'model',      label: 'Model Status',     icon: Icon.cpu },
+  { key: 'overview',    label: 'Overview',       icon: Icon.grid   },
+  { key: 'import',      label: 'Import Data',    icon: Icon.upload },
+  { key: 'predictions', label: 'Prediction Log', icon: Icon.list   },
+  { key: 'model',       label: 'Model Status',   icon: Icon.cpu    },
 ]
 
 /* ─── Auth helper ─────────────────────────────────────────────────────────── */
 function authHeaders() {
+  // Send Bearer token for API clients and Swagger UI.
+  // The browser also sends the httpOnly cookie automatically
+  // due to withCredentials on axios requests.
   const token = localStorage.getItem('admin_token')
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
 /* ─── Overview tab ────────────────────────────────────────────────────────── */
 function OverviewTab() {
-  const [status, setStatus] = useState(null)
+  const [status,  setStatus]  = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -114,8 +117,7 @@ function OverviewTab() {
         <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
           The reference dataset covers three commercial clusters in Gasabo and Kicukiro districts:
           Kimironko, Remera, and Kacyiru. Use <strong>Import Data</strong> to add newly collected
-          field observations, and <strong>Model Status</strong> to review the active model's
-          performance metrics.
+          field observations, then use <strong>Model Status → Retrain</strong> to update the model.
         </p>
       </div>
     </div>
@@ -124,23 +126,18 @@ function OverviewTab() {
 
 /* ─── Import tab ──────────────────────────────────────────────────────────── */
 function ImportTab() {
-  const [file, setFile] = useState(null)
-  const [previewLines, setPreviewLines] = useState(null)
-  const [status, setStatus] = useState(null)
-  const [loading, setLoading] = useState(false)
-
-  const REQUIRED_COLUMNS = [
-    'latitude', 'longitude', 'comp_count_300', 'comp_count_500', 'comp_count_1k',
-    'traffic_morning', 'traffic_midday', 'traffic_evening',
-    'dist_transport', 'dist_market', 'dist_road',
-    'pop_density', 'road_type', 'reference_label',
-  ]
+  const [file,           setFile]           = useState(null)
+  const [previewLines,   setPreviewLines]   = useState(null)
+  const [uploadStatus,   setUploadStatus]   = useState(null)
+  const [uploading,      setUploading]      = useState(false)
+  const [recomputing,    setRecomputing]    = useState(false)
+  const [recomputeStatus, setRecomputeStatus] = useState(null)
 
   async function onFileChange(e) {
     const f = e.target.files?.[0]
     setFile(f)
     setPreviewLines(null)
-    setStatus(null)
+    setUploadStatus(null)
     if (!f) return
     const text = await f.text()
     setPreviewLines(text.split('\n').slice(0, 6).join('\n'))
@@ -148,19 +145,44 @@ function ImportTab() {
 
   async function upload() {
     if (!file) return
-    setLoading(true)
-    setStatus(null)
+    setUploading(true)
+    setUploadStatus(null)
     try {
       const fd = new FormData()
       fd.append('file', file)
       const res = await axios.post(ENDPOINTS.ADMIN_BULK_OBS, fd, {
         headers: { ...authHeaders(), 'Content-Type': 'multipart/form-data' },
       })
-      setStatus({ ok: true, message: res.data.message || `Imported successfully.` })
+      setUploadStatus({ ok: true, message: res.data.message })
     } catch (err) {
-      setStatus({ ok: false, message: err.response?.data?.detail || err.message })
+      setUploadStatus({ ok: false, message: err.response?.data?.detail || err.message })
     } finally {
-      setLoading(false)
+      setUploading(false)
+    }
+  }
+
+  async function recomputeSpatial() {
+    if (!window.confirm(
+      'This will recalculate competitor counts and distance bands for ALL observations ' +
+      'using PostGIS spatial queries.\n\n' +
+      'Run this after uploading new field data so spatial features reflect the current ' +
+      'state of the dataset.\n\n' +
+      'It may take 30–60 seconds. Proceed?'
+    )) return
+
+    setRecomputing(true)
+    setRecomputeStatus(null)
+    try {
+      const res = await axios.post(
+        ENDPOINTS.ADMIN_RECOMPUTE,
+        {},
+        { headers: authHeaders(), timeout: 120000 }
+      )
+      setRecomputeStatus({ ok: true, message: res.data.message })
+    } catch (err) {
+      setRecomputeStatus({ ok: false, message: err.response?.data?.detail || err.message })
+    } finally {
+      setRecomputing(false)
     }
   }
 
@@ -169,16 +191,23 @@ function ImportTab() {
       <div className="admin-header">
         <div>
           <h1>Import Data</h1>
-          <p className="section-sub">Upload field-collected observations as a CSV file.</p>
+          <p className="section-sub">
+            Upload field-collected observations as a CSV. After import, recompute spatial
+            features, then go to <strong>Model Status</strong> to retrain.
+          </p>
         </div>
       </div>
 
+      {/* Upload card */}
       <div className="card" style={{ padding: 22, marginBottom: 20 }}>
+        <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: 16 }}>
+          Step 1 — Upload CSV
+        </h3>
         <label htmlFor="csv-upload" style={{ display: 'block' }}>
           <div className="import-dropzone">
             <div style={{ display: 'flex', justifyContent: 'center' }}><Icon.upArrow /></div>
             <h4>{file ? file.name : 'Click to select a CSV file'}</h4>
-            <p>Required columns must match the dataset schema</p>
+            <p>Required columns must match the dataset schema below</p>
           </div>
         </label>
         <input id="csv-upload" type="file" accept=".csv" onChange={onFileChange} style={{ display: 'none' }} />
@@ -188,18 +217,51 @@ function ImportTab() {
         )}
 
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
-          <button className="btn btn-primary" onClick={upload} disabled={!file || loading}>
-            {loading ? 'Uploading…' : 'Upload and import'}
+          <button className="btn btn-primary" onClick={upload} disabled={!file || uploading}>
+            {uploading ? 'Uploading…' : 'Upload and import'}
           </button>
         </div>
 
-        {status && (
-          <div className={`status-banner ${status.ok ? 'ok' : 'err'}`}>{status.message}</div>
+        {uploadStatus && (
+          <div className={`status-banner ${uploadStatus.ok ? 'ok' : 'err'}`}>
+            {uploadStatus.message}
+          </div>
         )}
       </div>
 
+      {/* Recompute spatial card */}
+      <div className="card" style={{ padding: 22, marginBottom: 20 }}>
+        <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: 8 }}>
+          Step 2 — Recompute spatial features
+        </h3>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 16 }}>
+          After uploading new observations, run this to recalculate competitor counts
+          (<code>comp_count_300/500/1k</code>) and distance bands
+          (<code>dist_transport/market/road</code>) for every row using PostGIS spatial
+          queries. This ensures the training data reflects the current state of the
+          full dataset before retraining.
+        </p>
+
+        <button
+          className="btn btn-primary"
+          onClick={recomputeSpatial}
+          disabled={recomputing}
+        >
+          {recomputing ? 'Recomputing… (30–60s)' : 'Recompute spatial features'}
+        </button>
+
+        {recomputeStatus && (
+          <div className={`status-banner ${recomputeStatus.ok ? 'ok' : 'err'}`} style={{ marginTop: 16 }}>
+            {recomputeStatus.message}
+          </div>
+        )}
+      </div>
+
+      {/* Schema reference */}
       <div className="card" style={{ padding: 22 }}>
-        <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: 12 }}>Required columns</h3>
+        <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: 12 }}>
+          Required CSV columns
+        </h3>
         <div className="schema-table">
           <table>
             <thead>
@@ -207,12 +269,14 @@ function ImportTab() {
             </thead>
             <tbody>
               <tr><td><code>latitude</code>, <code>longitude</code></td><td>GPS coordinates (WGS84 / EPSG:4326)</td></tr>
-              <tr><td><code>comp_count_300/500/1k</code></td><td>Computed via PostGIS ST_DWithin against the POI layer</td></tr>
-              <tr><td><code>traffic_morning/midday/evening</code></td><td>Field pedestrian counts for each observation window</td></tr>
-              <tr><td><code>dist_transport/market/road</code></td><td>Proximity bands (0–3) from PostGIS ST_Distance</td></tr>
+              <tr><td><code>comp_count_300/500/1k</code></td><td>Competitor counts at each radius — recalculated by Step 2</td></tr>
+              <tr><td><code>traffic_morning/midday/evening</code></td><td>Field pedestrian counts per observation window</td></tr>
+              <tr><td><code>dist_transport/market/road</code></td><td>Proximity bands 0–3 — recalculated by Step 2</td></tr>
               <tr><td><code>pop_density</code></td><td>NISR 2022 census value for the cell</td></tr>
               <tr><td><code>road_type</code></td><td>0 = unpaved, 1 = tarmac</td></tr>
-              <tr><td><code>reference_label</code></td><td>1 = positive reference, 0 = negative reference</td></tr>
+              <tr><td><code>reference_label</code></td><td>1 = positive spatial reference, 0 = negative</td></tr>
+              <tr><td><code>cluster</code></td><td>Cluster ID: 0 = Kimironko, 1 = Remera, 2 = Kacyiru</td></tr>
+              <tr><td><code>cluster_name</code></td><td>Cluster name (optional)</td></tr>
             </tbody>
           </table>
         </div>
@@ -222,8 +286,15 @@ function ImportTab() {
 }
 
 /* ─── Predictions tab ─────────────────────────────────────────────────────── */
+function scoreToBand(score) {
+  if (score == null) return '—'
+  if (score >= 0.65) return 'FAVOURABLE'
+  if (score >= 0.40) return 'BORDERLINE'
+  return 'UNFAVOURABLE'
+}
+
 function PredictionsTab() {
-  const [data, setData] = useState(null)
+  const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -253,17 +324,25 @@ function PredictionsTab() {
               </tr>
             </thead>
             <tbody>
-              {(data.predictions || []).map(p => (
-                <tr key={p.id}>
-                  <td>{p.id}</td>
-                  <td>{p.created_at}</td>
-                  <td>{Number(p.latitude).toFixed(5)}, {Number(p.longitude).toFixed(5)}</td>
-                  <td>{p.suitability_band}</td>
-                  <td>{p.suitability_score}</td>
-                </tr>
-              ))}
+              {(data.predictions || []).map(p => {
+                const band = scoreToBand(p.suitability_score)
+                const bandClass = band === 'FAVOURABLE' ? 'badge-green' : band === 'BORDERLINE' ? 'badge-amber' : band === 'UNFAVOURABLE' ? 'badge-red' : 'badge-brand'
+                return (
+                  <tr key={p.id}>
+                    <td>{p.id}</td>
+                    <td>{p.created_at ? new Date(p.created_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : '—'}</td>
+                    <td>{Number(p.latitude).toFixed(5)}, {Number(p.longitude).toFixed(5)}</td>
+                    <td><span className={`mini-badge ${bandClass}`}>{band}</span></td>
+                    <td>{p.suitability_score != null ? (p.suitability_score * 100).toFixed(1) + '%' : '—'}</td>
+                  </tr>
+                )
+              })}
               {(!data.predictions || data.predictions.length === 0) && (
-                <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No predictions logged yet.</td></tr>
+                <tr>
+                  <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                    No predictions logged yet.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -273,25 +352,83 @@ function PredictionsTab() {
   )
 }
 
-/* ─── Model status tab ────────────────────────────────────────────────────── */
+/* --- Model status tab ------------------------------------------------------ */
 function ModelTab() {
-  const [metrics, setMetrics] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [metrics,      setMetrics]      = useState(null)
+  const [metricsLoad,  setMetricsLoad]  = useState(true)
+  const [retraining,   setRetraining]   = useState(false)
+  const [retrainMsg,   setRetrainMsg]   = useState(null)
 
-  useEffect(() => {
+  const pollRef = { current: null }
+
+  function fetchMetrics() {
+    setMetricsLoad(true)
     axios.get(ENDPOINTS.ADMIN_MODEL_METRICS, { headers: authHeaders() })
       .then(res => setMetrics(res.data))
       .catch(() => setMetrics({ error: true }))
-      .finally(() => setLoading(false))
-  }, [])
+      .finally(() => setMetricsLoad(false))
+  }
 
-  const rows = metrics && !metrics.error ? [
-    ['Model',        metrics.model],
-    ['AUC-ROC',      metrics.test_auc_roc],
-    ['F1-Score',     metrics.test_f1],
-    ['OOB Score',    metrics.oob_score],
-    ['Training set', `${metrics.n_train} observations`],
-    ['Test set',     `${metrics.n_test} observations (Kacyiru hold-out)`],
+  useEffect(() => { fetchMetrics() }, [])
+
+  function startPolling() {
+    const iv = setInterval(async () => {
+      try {
+        const statusUrl = ENDPOINTS.ADMIN_RETRAIN + '/status'
+        const res = await axios.get(statusUrl, { headers: authHeaders() })
+        const data = res.data
+        if (!data.running) {
+          clearInterval(iv)
+          setRetraining(false)
+          if (data.last_result) {
+            setRetrainMsg({ ok: true, data: data.last_result })
+            fetchMetrics()
+          } else if (data.last_error) {
+            setRetrainMsg({ ok: false, message: data.last_error })
+          }
+        }
+      } catch {
+        clearInterval(iv)
+        setRetraining(false)
+        setRetrainMsg({ ok: false, message: 'Lost connection while waiting for retrain result.' })
+      }
+    }, 5000)
+  }
+
+  async function handleRetrain() {
+    if (!window.confirm(
+      'This will retrain the model from scratch using all observations in the database.\n\n' +
+      'Retraining runs in the background — the API stays available.\n' +
+      'This page polls for the result automatically.\n\nProceed?'
+    )) return
+
+    setRetraining(true)
+    setRetrainMsg(null)
+    try {
+      await axios.post(ENDPOINTS.ADMIN_RETRAIN, {}, { headers: authHeaders(), timeout: 15000 })
+      startPolling()
+    } catch (err) {
+      const msg = err.response?.data?.detail || err.message || 'Failed to start retraining.'
+      if (msg.includes('already in progress')) {
+        setRetrainMsg({ ok: false, message: 'Already in progress — check status below.' })
+        startPolling()
+      } else {
+        setRetraining(false)
+        setRetrainMsg({ ok: false, message: msg })
+      }
+    }
+  }
+
+  const metricRows = metrics && !metrics.error ? [
+    ['Model',         metrics.model],
+    ['AUC-ROC',       metrics.test_auc_roc != null ? metrics.test_auc_roc.toFixed(4) : '\u2014'],
+    ['F1-Score',      metrics.test_f1      != null ? metrics.test_f1.toFixed(4)      : '\u2014'],
+    ['OOB Score',     metrics.oob_score    != null ? metrics.oob_score.toFixed(4)    : '\u2014'],
+    ['Training set',  metrics.n_train      != null ? `${metrics.n_train} observations` : '\u2014'],
+    ['Test set',      metrics.n_test       != null
+      ? `${metrics.n_test} observations (${metrics.cluster_test ?? 'hold-out'})`
+      : '\u2014'],
+    ['Train clusters', Array.isArray(metrics.clusters_train) ? metrics.clusters_train.join(', ') : '\u2014'],
   ] : []
 
   return (
@@ -299,24 +436,62 @@ function ModelTab() {
       <div className="admin-header">
         <div>
           <h1>Model Status</h1>
-          <p className="section-sub">Active model metadata and evaluation metrics.</p>
+          <p className="section-sub">Active model metrics and retraining.</p>
         </div>
+        <button className="btn btn-primary" onClick={handleRetrain} disabled={retraining}>
+          {retraining ? 'Retraining\u2026 (background)' : 'Retrain model'}
+        </button>
+      </div>
+
+      {retraining && (
+        <div className="status-banner ok" style={{ marginBottom: 20 }}>
+          Retraining is running in the background. The API remains fully available.
+          This page updates automatically when complete.
+        </div>
+      )}
+
+      {retrainMsg && (
+        <div className={`status-banner ${retrainMsg.ok ? 'ok' : 'err'}`} style={{ marginBottom: 20 }}>
+          {retrainMsg.ok ? retrainMsg.data?.message : retrainMsg.message}
+          {retrainMsg.ok && retrainMsg.data && (
+            <div style={{ marginTop: 8, fontSize: '0.82rem', opacity: 0.85 }}>
+              AUC-ROC: {retrainMsg.data.test_auc_roc} | F1: {retrainMsg.data.test_f1} |
+              OOB: {retrainMsg.data.oob_score} | {retrainMsg.data.n_train} train /
+              {retrainMsg.data.n_test} test | {retrainMsg.data.elapsed_seconds}s
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="card" style={{ padding: 22, marginBottom: 20 }}>
+        <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: 16 }}>Current metrics</h3>
+        {metricsLoad && <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Loading\u2026</p>}
+        {!metricsLoad && metrics?.error && (
+          <div className="status-banner err">
+            Model metadata unavailable. Ensure artefacts are present and the server has restarted.
+          </div>
+        )}
+        {!metricsLoad && metricRows.length > 0 && (
+          <table><tbody>
+            {metricRows.map(([k, v]) => (
+              <tr key={k}>
+                <td style={{ fontWeight: 500, color: 'var(--text-primary)', width: 160 }}>{k}</td>
+                <td>{String(v ?? '\u2014')}</td>
+              </tr>
+            ))}
+          </tbody></table>
+        )}
       </div>
 
       <div className="card" style={{ padding: 22 }}>
-        {loading && <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Loading…</p>}
-        {!loading && metrics?.error && (
-          <div className="status-banner err">Model metadata unavailable. Check that the backend artefacts are loaded.</div>
-        )}
-        {!loading && rows.length > 0 && (
-          <table>
-            <tbody>
-              {rows.map(([k, v]) => (
-                <tr key={k}><td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{k}</td><td>{String(v)}</td></tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: 8 }}>About retraining</h3>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+          Retraining reads all observations from the database, engineers the five derived spatial
+          features, and runs a 30-iteration randomised hyperparameter search with 3-fold
+          cross-validation. The spatial hold-out split (Kimironko + Remera for training,
+          Kacyiru for evaluation) is preserved automatically. Retraining runs as a background
+          task so the API stays available. The new model is saved only if AUC-ROC &ge; 0.70.
+        </p>
       </div>
     </div>
   )
@@ -328,13 +503,21 @@ export default function AdminDashboard() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (!localStorage.getItem('admin_token')) {
+    if (localStorage.getItem('admin_logged_in') !== 'true') {
       navigate('/admin/login')
     }
   }, [navigate])
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await axios.post(
+        ENDPOINTS.ADMIN_LOGIN.replace('/login', '/logout'),
+        {},
+        { headers: authHeaders(), withCredentials: true }
+      )
+    } catch {}
     localStorage.removeItem('admin_token')
+    localStorage.removeItem('admin_logged_in')
     navigate('/admin/login')
   }, [navigate])
 

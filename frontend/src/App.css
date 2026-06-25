@@ -344,9 +344,39 @@
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
+/* ─── Mobile — tablets and large phones (max 768px) ───────────────────────── */
 @media (max-width: 768px) {
-  .search-form, .navbar-sep { display: none; }
+  /* Navbar — hide search, show only essential controls */
+  .search-form { display: none; }
+  .navbar-sep  { display: none; }
+  .navbar { padding: 0 12px; height: 52px; }
+  .navbar-name { font-size: 0.88rem; }
+  .navbar-tagline { display: none; }
   .nav-links { gap: 0; }
   .nav-link { padding: 6px 8px; font-size: 0.8rem; }
-  .settings-drawer { width: 100%; }
+  .navbar-right { gap: 6px; }
+
+  /* Map page — result panel slides up from bottom */
+  .map-page { flex-direction: column; }
+  .map-container { flex: 1; min-height: 0; }
+  .map-toolbar { top: 8px; left: 8px; right: 8px; gap: 6px; flex-wrap: wrap; }
+  .map-control-pill { padding: 6px 10px; font-size: 0.8rem; }
+  .map-hint { bottom: 56%; font-size: 0.78rem; }
+
+  /* Settings drawer — full width on mobile */
+  .settings-drawer { width: 100%; border-left: none; border-top: 1px solid var(--border); }
+
+  /* Inner pages — less padding */
+  .inner-page { padding: 20px 16px; }
+}
+
+/* ─── Small phones (max 480px) ────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .navbar-logo { width: 28px; height: 28px; }
+  .nav-link { padding: 5px 6px; font-size: 0.75rem; }
+  .navbar-right { gap: 4px; }
+  .btn-sm { padding: 5px 8px; font-size: 0.78rem; }
+  .map-toolbar { flex-direction: column; align-items: stretch; }
+  .map-control-pill { width: 100%; }
+  .map-run-btn .btn { width: 100%; justify-content: center; }
 }

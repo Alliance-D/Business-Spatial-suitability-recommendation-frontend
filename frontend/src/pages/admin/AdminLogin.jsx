@@ -16,8 +16,8 @@ function IconLock() {
 export default function AdminLogin() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState(null)
+  const [loading,  setLoading]  = useState(false)
+  const [error,    setError]    = useState(null)
   const navigate = useNavigate()
 
   async function submit(e) {
@@ -25,9 +25,23 @@ export default function AdminLogin() {
     setLoading(true)
     setError(null)
     try {
-      const res = await axios.post(ENDPOINTS.ADMIN_LOGIN, { username, password })
-      if (res.data?.token) {
-        localStorage.setItem('admin_token', res.data.token)
+      const res = await axios.post(
+        ENDPOINTS.ADMIN_LOGIN,
+        { username, password },
+        {
+          // withCredentials ensures the browser stores the httpOnly cookie
+          // returned by the backend Set-Cookie header.
+          withCredentials: true,
+        }
+      )
+      if (res.data?.authenticated) {
+        // Store a lightweight login-state flag only — the actual JWT is in
+        // an httpOnly cookie that JavaScript cannot access.
+        // Also store the token for Swagger/API clients that need it in headers.
+        localStorage.setItem('admin_logged_in', 'true')
+        if (res.data.token) {
+          localStorage.setItem('admin_token', res.data.token)
+        }
         navigate('/admin')
       } else {
         setError('Unexpected response from server.')
@@ -70,7 +84,12 @@ export default function AdminLogin() {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: '100%' }}
+            disabled={loading}
+          >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
 
